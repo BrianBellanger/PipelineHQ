@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ─────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  REVIEWER
+  SUBMITTER
+}
+
+enum ProjectStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  ON_HOLD
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ReviewDecision {
+  APPROVED
+  REJECTED
+  NEEDS_INFO
+}
+
+enum AuditAction {
+  PROJECT_CREATED
+  PROJECT_SUBMITTED
+  PROJECT_UPDATED
+  REVIEW_SUBMITTED
+  STATUS_CHANGED
+  COMMENT_ADDED
+  OWNER_ASSIGNED
+}
+
+// ── Models ────────────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      UserRole @default(SUBMITTER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  submittedProjects Project[]       @relation("SubmittedBy")
+  ownedProjects     Project[]       @relation("OwnedBy")
+  reviews           ProjectReview[]
+  comments          Comment[]
+  auditLogs         AuditLog[]
+
+  @@map("users")
+}
+
+model Department {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  projects Project[]
+
+  @@map("departments")
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  projects Project[]
+
+  @@map("categories")
+}
+
+model Project {
+  id                    String        @id @default(cuid())
+  title                 String
+  description           String
+  businessJustification String
+  priority              Priority      @default(MEDIUM)
+  status                ProjectStatus @default(DRAFT)
+  dueDate               DateTime?
+
+  requestedById String
+  ownerId       String?
+  categoryId    String
+  departmentId  String
+
+  requestedBy User       @relation("SubmittedBy", fields: [requestedById], references: [id])
+  owner       User?      @relation("OwnedBy", fields: [ownerId], references: [id])
+  category    Category   @relation(fields: [categoryId], references: [id])
+  department  Department @relation(fields: [departmentId], references: [id])
+
+  reviews   ProjectReview[]
+  comments  Comment[]
+  auditLogs AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("projects")
+}
+
+model ProjectReview {
+  id         String         @id @default(cuid())
+  projectId  String
+  reviewerId String
+  decision   ReviewDecision
+  notes      String?
+
+  project  Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  reviewer User    @relation(fields: [reviewerId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([projectId, reviewerId])
+  @@map("project_reviews")
+}
+
+model Comment {
+  id        String @id @default(cuid())
+  projectId String
+  authorId  String
+  body      String
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  author  User    @relation(fields: [authorId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("comments")
+}
+
+model AuditLog {
+  id         String         @id @default(cuid())
+  projectId  String
+  actorId    String
+  action     AuditAction
+  fromStatus ProjectStatus?
+  toStatus   ProjectStatus?
+  metadata   Json?
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  actor   User    @relation(fields: [actorId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}
