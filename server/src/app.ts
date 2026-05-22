@@ -5,9 +5,8 @@ import pinoHttp from 'pino-http';
 import { env } from './config/env';
 import { logger } from './utils/logger';
 import { errorHandler } from './middleware/errorHandler';
-
-// Modules will be imported and registered here in later phases
-// import { authRouter } from './modules/auth/auth.router';
+import { authRouter } from './modules/auth/auth.router';
+import { departmentsRouter, categoriesRouter } from './modules/reference/reference.router';
 
 export function createApp() {
   const app = express();
@@ -23,10 +22,10 @@ export function createApp() {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
-  // ── API routes (registered in later phases) ─────────────────────────────────
-  // app.use('/api/v1/auth', authRouter);
-  // app.use('/api/v1/projects', authenticate, projectsRouter);
-  // ...
+  // ── API routes ──────────────────────────────────────────────────────────────
+  app.use('/api/v1/auth', authRouter);
+  app.use('/api/v1/departments', departmentsRouter);
+  app.use('/api/v1/categories', categoriesRouter);
 
   // ── Global error handler (must be last) ─────────────────────────────────────
   app.use(errorHandler);

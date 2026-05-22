@@ -20,6 +20,13 @@ module.exports = {
       },
     },
     {
+      // shadcn/ui generated components — disable react-refresh fast-export warnings
+      files: ['client/src/components/ui/**/*.{ts,tsx}'],
+      rules: {
+        'react-refresh/only-export-components': 'off',
+      },
+    },
+    {
       files: ['server/**/*.ts'],
       env: { node: true },
     },

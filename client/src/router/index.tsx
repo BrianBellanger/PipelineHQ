@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
 
@@ -8,9 +9,13 @@ export const router = createBrowserRouter([
     element: <LoginPage />,
   },
   {
-    path: '/',
-    // AppLayout with auth guard will wrap this in Phase 1
-    element: <DashboardPage />,
+    element: <AppLayout />,
+    children: [
+      {
+        path: '/',
+        element: <DashboardPage />,
+      },
+    ],
   },
   {
     path: '*',
