@@ -54,8 +54,11 @@ npm run dev:client        # vite — client on :5173
 npm run typecheck         # tsc --noEmit across all workspaces
 npm run lint              # eslint .
 npm run format            # prettier --write .
+```
 
-# Database (from repo root or server/)
+Database commands must be run from the **`server/` workspace** (no root alias):
+```bash
+cd server
 npm run db:migrate        # prisma migrate dev --name <desc>
 npm run db:seed           # tsx prisma/seed.ts
 ```
@@ -134,7 +137,7 @@ export const projectKeys = {
 };
 ```
 
-**shadcn/ui:** Add components individually via `npx shadcn-ui@latest add <component>`. Components live in `components/ui/`. Do not install as a monolithic package.
+**shadcn/ui:** Add components individually via `npx shadcn@latest add <component>` (run from `client/`). Components live in `components/ui/`. Do not install as a monolithic package. The `client/tsconfig.json` includes `paths` so the CLI resolves `@/` to `src/` correctly — if a future install puts files under `client/@/`, move them to `client/src/` and delete the stray `@/` directory. The `components/ui/` directory has `react-refresh/only-export-components` disabled in ESLint (shadcn exports hooks alongside components by design).
 
 **Forms:** `react-hook-form` + `@hookform/resolvers/zod`. The same Zod schema drives server validation and client form errors.
 
