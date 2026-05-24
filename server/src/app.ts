@@ -7,6 +7,7 @@ import { logger } from './utils/logger';
 import { errorHandler } from './middleware/errorHandler';
 import { authRouter } from './modules/auth/auth.router';
 import { departmentsRouter, categoriesRouter } from './modules/reference/reference.router';
+import { projectsRouter } from './modules/projects/projects.router';
 
 export function createApp() {
   const app = express();
@@ -26,6 +27,7 @@ export function createApp() {
   app.use('/api/v1/auth', authRouter);
   app.use('/api/v1/departments', departmentsRouter);
   app.use('/api/v1/categories', categoriesRouter);
+  app.use('/api/v1/projects', projectsRouter);
 
   // ── Global error handler (must be last) ─────────────────────────────────────
   app.use(errorHandler);

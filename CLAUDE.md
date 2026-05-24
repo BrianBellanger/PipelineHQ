@@ -105,12 +105,28 @@ import 'express-async-errors'; // patches Express to forward async errors to err
 
 **Input validation:** `validate(schema)` middleware factory uses `schema.parse` — ZodError propagates up to `errorHandler`. `validateQuery(schema)` for query-string params. Controllers receive fully-typed bodies; never touch `req.body` directly.
 
+**Query param typing in controllers:** After `validateQuery` runs, cast the query with a double cast to avoid a TypeScript overlap error with `ParsedQs`:
+```ts
+const query = req.query as unknown as ListProjectsQuery;
+```
+
+**Pagination meta bundling:** The Axios response interceptor does `response.data.data`, which strips any top-level `meta` key. For paginated endpoints, bundle `meta` inside `data`:
+```ts
+res.json(success({ items: projects, meta })); // NOT success(projects, meta)
+```
+Client-side hooks then receive `{ items, meta }` as the typed data object.
+
 **API response envelope:**
 ```json
 { "success": true, "data": { ... }, "meta": { "page": 1, "total": 47 } }
 { "success": false, "error": { "code": "NOT_FOUND", "message": "...", "fields": {} } }
 ```
 Use `success(data, meta?)` and `fail(message, code, fields?)` from `utils/apiResponse.ts`.
+
+**Prisma select shapes:** Declare reusable select objects with `satisfies Prisma.XxxSelect` so TypeScript infers the return shape without widening to `Prisma.XxxSelect`. Example:
+```ts
+const detailSelect = { id: true, title: true, reviews: { select: { ... } } } satisfies Prisma.ProjectSelect;
+```
 
 **Prisma JSON fields:** Use `Prisma.InputJsonValue` for `metadata?` params — not `Record<string, unknown>`. Import as `import type { ..., Prisma } from '@prisma/client'`.
 
@@ -140,6 +156,13 @@ export const projectKeys = {
 **shadcn/ui:** Add components individually via `npx shadcn@latest add <component>` (run from `client/`). Components live in `components/ui/`. Do not install as a monolithic package. The `client/tsconfig.json` includes `paths` so the CLI resolves `@/` to `src/` correctly — if a future install puts files under `client/@/`, move them to `client/src/` and delete the stray `@/` directory. The `components/ui/` directory has `react-refresh/only-export-components` disabled in ESLint (shadcn exports hooks alongside components by design).
 
 **Forms:** `react-hook-form` + `@hookform/resolvers/zod`. The same Zod schema drives server validation and client form errors.
+
+**shadcn Select sentinel for "clear filter":** shadcn `Select` does not handle empty string `''` as a value correctly. Use a `'__all__'` sentinel for "no filter selected" options and check for it explicitly in `onValueChange`:
+```tsx
+<SelectValue value={filters.status ?? '__all__'} />
+// in onValueChange:
+onValueChange={(v) => setFilters({ status: v === '__all__' ? undefined : v })}
+```
 
 ---
 
