@@ -134,6 +134,17 @@ const detailSelect = { id: true, title: true, reviews: { select: { ... } } } sat
 
 **Audit log:** Call `writeAuditEntry(params)` from `utils/auditLog.ts` whenever project status changes or a significant action occurs. Pass `fromStatus`/`toStatus` for status transitions.
 
+**Nested resource sub-routers:** For routes like `GET/POST /projects/:id/reviews`, export a `Router({ mergeParams: true })` from the child module and mount it on the parent router. `authenticate` is applied at the parent level and inherited; the child only adds its own `authorize` guards. Example:
+```ts
+// reviews.router.ts
+export const projectReviewsRouter = Router({ mergeParams: true });
+projectReviewsRouter.post('/', authorize('REVIEWER', 'ADMIN'), validate(schema), handler);
+
+// projects.router.ts
+projectsRouter.use('/:id/reviews', projectReviewsRouter); // req.params.id available in handlers
+```
+Modules that also need a standalone top-level route (e.g. `GET /reviews/queue`) export a second router mounted separately in `app.ts`.
+
 **Migrations:** Always `prisma migrate dev --name <descriptive-name>`. Never `prisma db push`. Migration SQL is committed alongside schema changes. Seed is re-runnable (uses upserts / `createMany` with `skipDuplicates: true`).
 
 ### Client
@@ -151,6 +162,17 @@ export const projectKeys = {
   list: (filters) => ['projects', 'list', filters] as const,
   detail: (id: string) => ['projects', 'detail', id] as const,
 };
+```
+
+**Detail vs. list API types:** List endpoints return a summary shape (no nested arrays); detail endpoints return the full shape including `reviews` and `comments`. Reflect this with separate types — `Project` (summary) and `ProjectDetail extends Project` (with `reviews: ReviewSnippet[]` and `comments: CommentSnippet[]`). API functions that call the detail endpoint (e.g. `getProject`, `submitProject`) are typed to return `ProjectDetail`; list functions return `Project`.
+
+**Zod cross-field validation:** Use `.refine()` on the schema object (not a field) for conditions that span multiple fields. Always specify `path` so the error attaches to the correct field:
+```ts
+z.object({ decision: z.enum([...]), notes: z.string().optional() })
+  .refine(
+    (data) => data.decision !== 'REJECTED' || (!!data.notes && data.notes.trim().length > 0),
+    { message: 'Notes are required when rejecting', path: ['notes'] }
+  );
 ```
 
 **shadcn/ui:** Add components individually via `npx shadcn@latest add <component>` (run from `client/`). Components live in `components/ui/`. Do not install as a monolithic package. The `client/tsconfig.json` includes `paths` so the CLI resolves `@/` to `src/` correctly — if a future install puts files under `client/@/`, move them to `client/src/` and delete the stray `@/` directory. The `components/ui/` directory has `react-refresh/only-export-components` disabled in ESLint (shadcn exports hooks alongside components by design).
