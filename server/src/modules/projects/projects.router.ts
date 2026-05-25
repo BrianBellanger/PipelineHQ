@@ -18,6 +18,8 @@ import {
   assignOwnerHandler,
   overrideStatusHandler,
 } from './projects.controller';
+import { projectReviewsRouter } from '../reviews/reviews.router';
+import { projectCommentsRouter } from '../comments/comments.router';
 
 export const projectsRouter = Router();
 
@@ -30,3 +32,5 @@ projectsRouter.patch('/:id', validate(updateProjectSchema), updateHandler);
 projectsRouter.post('/:id/submit', submitHandler);
 projectsRouter.patch('/:id/owner', authorize('ADMIN'), validate(assignOwnerSchema), assignOwnerHandler);
 projectsRouter.patch('/:id/status', authorize('ADMIN'), validate(overrideStatusSchema), overrideStatusHandler);
+projectsRouter.use('/:id/reviews', projectReviewsRouter);
+projectsRouter.use('/:id/comments', projectCommentsRouter);

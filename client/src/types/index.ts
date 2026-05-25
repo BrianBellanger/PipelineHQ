@@ -75,3 +75,23 @@ export interface Comment {
   author: Pick<User, 'id' | 'name' | 'email'>;
   createdAt: string;
 }
+
+export interface ReviewSnippet {
+  id: string;
+  decision: ReviewDecision;
+  notes: string | null;
+  createdAt: string;
+  reviewer: Pick<User, 'id' | 'name' | 'email'>;
+}
+
+export interface CommentSnippet {
+  id: string;
+  body: string;
+  createdAt: string;
+  author: Pick<User, 'id' | 'name' | 'email'>;
+}
+
+export interface ProjectDetail extends Project {
+  reviews: ReviewSnippet[];
+  comments: CommentSnippet[];
+}

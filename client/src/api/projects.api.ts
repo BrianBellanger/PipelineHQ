@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { Project, PaginationMeta } from '@/types';
+import type { Project, ProjectDetail, PaginationMeta } from '@/types';
 
 export interface ListProjectsParams {
   page?: number;
@@ -30,7 +30,7 @@ export function listProjects(params: ListProjectsParams = {}) {
 }
 
 export function getProject(id: string) {
-  return apiClient.get<never, Project>(`/projects/${id}`);
+  return apiClient.get<never, ProjectDetail>(`/projects/${id}`);
 }
 
 export function createProject(payload: CreateProjectPayload) {
@@ -42,7 +42,7 @@ export function updateProject(id: string, payload: Partial<CreateProjectPayload>
 }
 
 export function submitProject(id: string) {
-  return apiClient.post<never, Project>(`/projects/${id}/submit`);
+  return apiClient.post<never, ProjectDetail>(`/projects/${id}/submit`);
 }
 
 export function assignOwner(id: string, ownerId: string) {
