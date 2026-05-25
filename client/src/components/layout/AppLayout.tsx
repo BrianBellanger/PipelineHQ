@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { Toaster } from '@/components/ui/sonner';
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
@@ -77,6 +78,7 @@ export function AppLayout() {
       <main>
         <Outlet />
       </main>
+      <Toaster richColors position="bottom-right" />
     </div>
   );
 }

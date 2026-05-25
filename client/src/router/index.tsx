@@ -6,6 +6,8 @@ import { ProjectListPage } from '@/features/projects/ProjectListPage';
 import { ProjectNewPage } from '@/features/projects/ProjectNewPage';
 import { ProjectDetailPage } from '@/features/projects/ProjectDetailPage';
 import { ReviewQueuePage } from '@/features/reviews/ReviewQueuePage';
+import { ProjectEditPage } from '@/features/projects/ProjectEditPage';
+import { UserManagementPage } from '@/features/admin/UserManagementPage';
 
 export const router = createBrowserRouter([
   {
@@ -19,7 +21,9 @@ export const router = createBrowserRouter([
       { path: '/projects', element: <ProjectListPage /> },
       { path: '/projects/new', element: <ProjectNewPage /> },
       { path: '/projects/:id', element: <ProjectDetailPage /> },
+      { path: '/projects/:id/edit', element: <ProjectEditPage /> },
       { path: '/reviews', element: <ReviewQueuePage /> },
+      { path: '/admin/users', element: <UserManagementPage /> },
     ],
   },
   {

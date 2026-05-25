@@ -1,5 +1,14 @@
 export type UserRole = 'ADMIN' | 'REVIEWER' | 'SUBMITTER';
 
+export type AuditAction =
+  | 'PROJECT_CREATED'
+  | 'PROJECT_SUBMITTED'
+  | 'PROJECT_UPDATED'
+  | 'REVIEW_SUBMITTED'
+  | 'STATUS_CHANGED'
+  | 'COMMENT_ADDED'
+  | 'OWNER_ASSIGNED';
+
 export type ProjectStatus =
   | 'DRAFT'
   | 'SUBMITTED'
@@ -94,4 +103,19 @@ export interface CommentSnippet {
 export interface ProjectDetail extends Project {
   reviews: ReviewSnippet[];
   comments: CommentSnippet[];
+}
+
+export interface DashboardSummary {
+  byStatus: Partial<Record<ProjectStatus, number>>;
+  byPriority: Partial<Record<Priority, number>>;
+}
+
+export interface ActivityEntry {
+  id: string;
+  action: AuditAction;
+  fromStatus: ProjectStatus | null;
+  toStatus: ProjectStatus | null;
+  createdAt: string;
+  project: { id: string; title: string };
+  actor: { id: string; name: string };
 }

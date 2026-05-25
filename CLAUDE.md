@@ -145,6 +145,20 @@ projectsRouter.use('/:id/reviews', projectReviewsRouter); // req.params.id avail
 ```
 Modules that also need a standalone top-level route (e.g. `GET /reviews/queue`) export a second router mounted separately in `app.ts`.
 
+**Prisma `groupBy` → record transform:** `groupBy` returns an array of `{ field, _count: { _all } }`. Convert to a plain object for the API response:
+```ts
+const byStatus = Object.fromEntries(
+  groups.map((g) => [g.status, g._count._all])
+) as Partial<Record<ProjectStatus, number>>;
+```
+Groups with zero rows are absent from the result — clients must treat missing keys as `0`.
+
+**Router-level middleware chain:** To apply multiple middleware to all routes in a router, pass them together to `router.use()`:
+```ts
+usersRouter.use(authenticate, authorize('ADMIN')); // all routes require ADMIN
+```
+This is preferred over repeating the guards on each route.
+
 **Migrations:** Always `prisma migrate dev --name <descriptive-name>`. Never `prisma db push`. Migration SQL is committed alongside schema changes. Seed is re-runnable (uses upserts / `createMany` with `skipDuplicates: true`).
 
 ### Client
@@ -176,6 +190,18 @@ z.object({ decision: z.enum([...]), notes: z.string().optional() })
 ```
 
 **shadcn/ui:** Add components individually via `npx shadcn@latest add <component>` (run from `client/`). Components live in `components/ui/`. Do not install as a monolithic package. The `client/tsconfig.json` includes `paths` so the CLI resolves `@/` to `src/` correctly — if a future install puts files under `client/@/`, move them to `client/src/` and delete the stray `@/` directory. The `components/ui/` directory has `react-refresh/only-export-components` disabled in ESLint (shadcn exports hooks alongside components by design).
+
+**Toast notifications:** Use `sonner`. Call `toast.success()` / `toast.error()` in mutation `onSuccess` / `onError` callbacks. The `<Toaster richColors position="bottom-right" />` is mounted once in `AppLayout` — do not add it elsewhere.
+
+**Form pre-population from async data:** When editing an existing record, initialize the form with empty defaults and call `form.reset(values)` inside a `useEffect` that fires when the query data arrives:
+```ts
+useEffect(() => {
+  if (project) form.reset({ title: project.title, ... });
+}, [project, form]);
+```
+This prevents a stale-render flash and correctly handles the loading state before data is available.
+
+**Loading skeletons:** Use `Array.from({ length: N }).map((_, i) => <Skeleton key={i} ... />)` to render placeholder rows during data fetches. The `Skeleton` component is at `components/ui/skeleton`.
 
 **Forms:** `react-hook-form` + `@hookform/resolvers/zod`. The same Zod schema drives server validation and client form errors.
 
