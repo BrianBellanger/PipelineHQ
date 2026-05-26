@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -31,7 +31,9 @@ import {
 
 const reviewSchema = z
   .object({
-    decision: z.enum(['APPROVED', 'REJECTED', 'NEEDS_INFO']),
+    decision: z.enum(['APPROVED', 'REJECTED', 'NEEDS_INFO'], {
+      required_error: 'Please select a decision',
+    }),
     notes: z.string().optional(),
   })
   .refine(
@@ -57,6 +59,8 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 
 export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
+  const fromReviews = location.state?.fromReviews === true;
   const user = useAuthStore((s) => s.user);
   const { data: project, isLoading, isError } = useProject(id!);
   const submitProject = useSubmitProject(id!);
@@ -67,7 +71,7 @@ export function ProjectDetailPage() {
 
   const reviewForm = useForm<ReviewFormValues>({
     resolver: zodResolver(reviewSchema),
-    defaultValues: { decision: 'APPROVED', notes: '' },
+    defaultValues: { decision: '' as ReviewFormValues['decision'], notes: '' },
   });
 
   if (isLoading) {
@@ -98,7 +102,7 @@ export function ProjectDetailPage() {
 
   function handleReviewSubmit(values: ReviewFormValues) {
     submitReview.mutate(values, {
-      onSuccess: () => reviewForm.reset({ decision: 'APPROVED', notes: '' }),
+      onSuccess: () => reviewForm.reset({ decision: '' as ReviewFormValues['decision'], notes: '' }),
     });
   }
 
@@ -113,8 +117,11 @@ export function ProjectDetailPage() {
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
       {/* Breadcrumb */}
-      <Link to="/projects" className="text-sm text-muted-foreground hover:underline">
-        ← Projects
+      <Link
+        to={fromReviews ? '/reviews' : '/projects'}
+        className="text-sm text-muted-foreground hover:underline"
+      >
+        {fromReviews ? '← Reviews' : '← Projects'}
       </Link>
 
       {/* Header */}
@@ -225,10 +232,10 @@ export function ProjectDetailPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Decision</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select decision" />
+                            <SelectValue placeholder="Select a decision" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -249,7 +256,7 @@ export function ProjectDetailPage() {
                     <FormItem>
                       <FormLabel>
                         Notes{' '}
-                        {reviewForm.watch('decision') !== 'APPROVED' && (
+                        {['REJECTED', 'NEEDS_INFO'].includes(reviewForm.watch('decision')) && (
                           <span className="text-destructive">*</span>
                         )}
                       </FormLabel>

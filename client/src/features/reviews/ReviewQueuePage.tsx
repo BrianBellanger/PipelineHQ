@@ -50,7 +50,7 @@ export function ReviewQueuePage() {
                 <TableRow
                   key={project.id}
                   className="cursor-pointer"
-                  onClick={() => navigate(`/projects/${project.id}`)}
+                  onClick={() => navigate(`/projects/${project.id}`, { state: { fromReviews: true } })}
                 >
                   <TableCell className="font-medium">{project.title}</TableCell>
                   <TableCell>

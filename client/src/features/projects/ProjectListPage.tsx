@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useProjects } from './hooks/useProjects';
 import { StatusBadge } from '@/components/data/StatusBadge';
 import { PriorityChip } from '@/components/data/PriorityChip';
@@ -42,6 +42,7 @@ const PRIORITY_OPTIONS: { value: Priority | ''; label: string }[] = [
 ];
 
 export function ProjectListPage() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<ListProjectsParams>({ page: 1, limit: 20 });
   const { data, isLoading, isError } = useProjects(filters);
 
@@ -133,15 +134,12 @@ export function ProjectListPage() {
             </TableHeader>
             <TableBody>
               {projects.map((project) => (
-                <TableRow key={project.id} className="cursor-pointer hover:bg-muted/50">
-                  <TableCell>
-                    <Link
-                      to={`/projects/${project.id}`}
-                      className="font-medium hover:underline"
-                    >
-                      {project.title}
-                    </Link>
-                  </TableCell>
+                <TableRow
+                  key={project.id}
+                  className="cursor-pointer"
+                  onClick={() => navigate(`/projects/${project.id}`)}
+                >
+                  <TableCell className="font-medium">{project.title}</TableCell>
                   <TableCell>
                     <StatusBadge status={project.status} />
                   </TableCell>
