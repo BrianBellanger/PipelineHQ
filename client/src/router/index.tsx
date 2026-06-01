@@ -1,6 +1,13 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
+import { ProjectListPage } from '@/features/projects/ProjectListPage';
+import { ProjectNewPage } from '@/features/projects/ProjectNewPage';
+import { ProjectDetailPage } from '@/features/projects/ProjectDetailPage';
+import { ReviewQueuePage } from '@/features/reviews/ReviewQueuePage';
+import { ProjectEditPage } from '@/features/projects/ProjectEditPage';
+import { UserManagementPage } from '@/features/admin/UserManagementPage';
 
 export const router = createBrowserRouter([
   {
@@ -8,9 +15,16 @@ export const router = createBrowserRouter([
     element: <LoginPage />,
   },
   {
-    path: '/',
-    // AppLayout with auth guard will wrap this in Phase 1
-    element: <DashboardPage />,
+    element: <AppLayout />,
+    children: [
+      { path: '/', element: <DashboardPage /> },
+      { path: '/projects', element: <ProjectListPage /> },
+      { path: '/projects/new', element: <ProjectNewPage /> },
+      { path: '/projects/:id', element: <ProjectDetailPage /> },
+      { path: '/projects/:id/edit', element: <ProjectEditPage /> },
+      { path: '/reviews', element: <ReviewQueuePage /> },
+      { path: '/admin/users', element: <UserManagementPage /> },
+    ],
   },
   {
     path: '*',
