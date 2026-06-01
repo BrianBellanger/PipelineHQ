@@ -251,3 +251,49 @@ All passwords: `password123`
 | `submitter@pipelinehq.demo` | SUBMITTER |
 
 Docker credentials — Postgres: `pipelinehq` / `pipelinehq_dev` · pgAdmin: `admin@pipelinehq.dev` / `admin` (port 5050).
+
+---
+
+## Deployment
+
+Production is live across three services, all building from the `main` branch.
+
+| Layer | Host | URL |
+|---|---|---|
+| Frontend | Vercel | `https://pipeline-hq-gules.vercel.app` |
+| Backend | Render | `https://pipelinehq-m4xj.onrender.com` |
+| Database | Neon | PostgreSQL (direct endpoint) |
+
+### Vercel (frontend)
+
+- Root directory: **blank** (repo root) — `vercel.json` at the repo root controls the build.
+- `vercel.json` sets `installCommand`, `buildCommand` (`npm run build --workspace=client`), and `outputDirectory` (`client/dist`). This is required because npm workspace hoisting puts `tsc` and `vite` in the root `node_modules/.bin`, which only a root-level build invocation can find.
+- **Required env var:** `VITE_API_BASE_URL=https://pipelinehq-m4xj.onrender.com/api/v1` (must include `/api/v1`; no trailing slash). `VITE_*` vars are baked at build time — a redeploy is required after changing them.
+
+### Render (backend)
+
+- **Build command:** `npm install --include=dev && npx prisma generate && npx prisma migrate deploy && npm run build`
+  - `--include=dev` is required because Render sets `NODE_ENV=production` which skips devDependencies by default. All `@types/*` packages and `typescript` are devDependencies and must be present for the TypeScript build.
+  - `prisma migrate deploy` applies pending migrations against Neon on each deploy.
+- **Start command:** `npm run start --workspace=server`
+- **Required env vars** (set in Render dashboard — never committed):
+  - `DATABASE_URL` — Neon **direct** connection string (not the `-pooler` endpoint; see Neon section below)
+  - `JWT_SECRET` — 32+ char secret
+  - `JWT_EXPIRES_IN=7d`
+  - `PORT=4000`
+  - `CORS_ORIGIN` — Vercel deployment URL, **no trailing slash** (e.g. `https://pipeline-hq-gules.vercel.app`). A trailing slash causes CORS preflight failures because the browser origin never includes one.
+  - `NODE_ENV=production`
+
+### Neon (database)
+
+- Use the **direct** connection string, not the `-pooler` endpoint. Neon's pooler uses PgBouncer, which is incompatible with Prisma's prepared statements.
+- Remove `&channel_binding=require` from the connection string — Prisma's pg driver does not support it.
+- Correct format: `postgresql://user:pass@ep-xxxx.c-8.us-east-1.aws.neon.tech/neondb?sslmode=require`
+- The pooler URL (shown as default in Neon's dashboard) ends in `-pooler` and includes `channel_binding=require` — do **not** use this for `DATABASE_URL` in Render.
+
+### Deploying changes
+
+1. Merge feature work into `main`.
+2. Vercel auto-deploys on push to `main`.
+3. Render auto-deploys on push to `main` (runs build command above, which includes `prisma migrate deploy`).
+4. Schema changes: write migration locally (`cd server && npm run db:migrate -- --name <desc>`), commit the generated migration file, then push — Render applies it on next deploy.
